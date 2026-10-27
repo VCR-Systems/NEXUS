@@ -30,3 +30,5 @@
 
 //other
 #define SAMPLING_RATE_HZ 60 //60 hz should be enough
+#define ACCEL_THRESHOLD_LIFTOFF 1.5 //G's
+#define ACCEL_THRESHOLD_COAST 0.5 //G's
