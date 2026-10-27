@@ -1,0 +1,1 @@
+//init i2c/spi and read mpu6050/baro
