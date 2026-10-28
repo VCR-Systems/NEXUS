@@ -1,5 +1,0 @@
-#include "config.hpp"
-#include "flight_state.hpp"
-#include "logger.hpp"
-#include "pico/stdlib.h"
-#include "sensors.hpp"
