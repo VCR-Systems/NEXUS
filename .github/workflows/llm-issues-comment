@@ -1,0 +1,142 @@
+name: Multi-LLM Issue Reviewer
+
+on:
+  issues:
+    types: [assigned, labeled]
+
+jobs:
+  multi-llm-fix-suggestions:
+    # Optional: Only run if a specific label is applied (uncomment if desired)
+    # if: contains(github.event.issue.labels.*.name, 'ai-review')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Query LLMs and Post Comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          python - << 'EOF'
+          import os
+          import json
+          import requests
+
+          issue_title = os.environ.get("ISSUE_TITLE", "")
+          issue_body = os.environ.get("ISSUE_BODY", "")
+          issue_number = os.environ.get("ISSUE_NUMBER")
+          repo = os.environ.get("REPO")
+
+          gemini_key = os.environ.get("GEMINI_API_KEY")
+          anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+          openai_key = os.environ.get("OPENAI_API_KEY")
+
+          prompt = (
+              f"You are a helpful software engineering assistant reviewing a GitHub Issue.\n\n"
+              f"**Issue Title:** {issue_title}\n"
+              f"**Issue Description:**\n{issue_body}\n\n"
+              f"Please provide a concise analysis of the issue and step-by-step suggestions on how to fix or resolve it."
+          )
+
+          # 1. Query Gemini
+          def get_gemini_response(prompt_text, api_key):
+              if not api_key:
+                  return "⚠️ *Gemini API key missing.*"
+              url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+              payload = {"contents": [{"parts": [{"text": prompt_text}]}]}
+              try:
+                  res = requests.post(url, json=payload, timeout=40)
+                  if res.status_code == 200:
+                      return res.json()['candidates'][0]['content']['parts'][0]['text']
+                  return f"Error ({res.status_code}): {res.text}"
+              except Exception as e:
+                  return f"Request failed: {str(e)}"
+
+          # 2. Query ChatGPT
+          def get_openai_response(prompt_text, api_key):
+              if not api_key:
+                  return "⚠️ *OpenAI API key missing.*"
+              url = "https://api.openai.com/v1/chat/completions"
+              headers = {
+                  "Authorization": f"Bearer {api_key}",
+                  "Content-Type": "application/json"
+              }
+              payload = {
+                  "model": "gpt-4o-mini",
+                  "messages": [{"role": "user", "content": prompt_text}]
+              }
+              try:
+                  res = requests.post(url, headers=headers, json=payload, timeout=40)
+                  if res.status_code == 200:
+                      return res.json()['choices'][0]['message']['content']
+                  return f"Error ({res.status_code}): {res.text}"
+              except Exception as e:
+                  return f"Request failed: {str(e)}"
+
+          print("Querying Gemini...")
+          gemini_res = get_gemini_response(prompt, gemini_key)
+
+          print("Querying Claude...")
+          claude_res = get_claude_response(prompt, anthropic_key)
+
+          print("Querying ChatGPT...")
+          openai_res = get_openai_response(prompt, openai_key)
+
+          # Format comment
+          comment_body = f"""### 🤖 Multi-LLM Issue Analysis
+
+          <details>
+          <summary><b>✨ Gemini (Google) Suggestion</b></summary>
+
+          {gemini_res}
+
+          </details>
+
+          <details>
+          <summary><b>🧠 Claude (Anthropic) Suggestion</b></summary>
+
+          {claude_res}
+
+          </details>
+
+          <details>
+          <summary><b>💬 ChatGPT (OpenAI) Suggestion</b></summary>
+
+          {openai_res}
+
+          </details>
+          """
+
+          # Post back to GitHub Issue
+          github_token = os.environ.get("GITHUB_TOKEN")
+          comment_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
+          headers = {
+              "Authorization": f"token {github_token}",
+              "Accept": "application/vnd.github.v3+json"
+          }
+          res = requests.post(comment_url, headers=headers, json={"body": comment_body})
+          if res.status_code == 201:
+              print("Successfully posted multi-LLM review comment!")
+          else:
+              print(f"Failed to post comment: {res.status_code} - {res.text}")
+          EOF
