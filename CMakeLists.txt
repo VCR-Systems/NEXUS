@@ -8,9 +8,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-add_library(nexus_firmware STATIC
-    _src/main.cpp
+file(GLOB NEXUS_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_LIST_DIR}/_src/*.cpp
 )
+
+add_library(nexus_firmware STATIC ${NEXUS_SOURCES})
 
 target_include_directories(nexus_firmware PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/_include
