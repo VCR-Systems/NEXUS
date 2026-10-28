@@ -70,7 +70,8 @@ jobs:
               except Exception as e:
                   return f"Request failed: {str(e)}"
 
-          <details>
+          # Format comment
+          comment_body = f"""###Issue Analysis
           <summary><b>Gemini Suggestion</b></summary>
 
           {gemini_res}
