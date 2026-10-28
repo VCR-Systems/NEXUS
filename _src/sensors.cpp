@@ -3,4 +3,4 @@
 #include "logger.hpp"
 #include "sensors.hpp"
 
-#include "hardware/i2c.hpp"
+#include "hardware/i2c.h"
