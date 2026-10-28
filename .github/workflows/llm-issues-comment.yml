@@ -48,7 +48,6 @@ jobs:
           repo = os.environ.get("REPO")
 
           gemini_key = os.environ.get("GEMINI_API_KEY")
-          anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
           openai_key = os.environ.get("OPENAI_API_KEY")
 
           prompt = (
@@ -96,9 +95,6 @@ jobs:
           print("Querying Gemini...")
           gemini_res = get_gemini_response(prompt, gemini_key)
 
-          print("Querying Claude...")
-          claude_res = get_claude_response(prompt, anthropic_key)
-
           print("Querying ChatGPT...")
           openai_res = get_openai_response(prompt, openai_key)
 
@@ -109,13 +105,6 @@ jobs:
           <summary><b>✨ Gemini (Google) Suggestion</b></summary>
 
           {gemini_res}
-
-          </details>
-
-          <details>
-          <summary><b>🧠 Claude (Anthropic) Suggestion</b></summary>
-
-          {claude_res}
 
           </details>
 
