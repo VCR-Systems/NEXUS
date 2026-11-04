@@ -1,4 +1,4 @@
-# Install script for directory: /Users/christophercyhui/pico-sdk/src/common/pico_bit_ops_headers
+# Install script for directory: /Users/christophercyhui/.pico-sdk/sdk/2.3.1/src/common/pico_bit_ops_headers
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,7 +34,7 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/opt/homebrew/bin/arm-none-eabi-objdump")
+  set(CMAKE_OBJDUMP "/Users/christophercyhui/.pico-sdk/toolchain/15_2_Rel1/bin/arm-none-eabi-objdump")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
