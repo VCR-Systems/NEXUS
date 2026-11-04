@@ -28,15 +28,21 @@ file(GLOB NEXUS_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_LIST_DIR}/_src/*.cpp
 )
 
-add_library(nexus_firmware STATIC ${NEXUS_SOURCES})
+# 1. Change add_library to add_executable using your project name 'NEXUS'
+add_executable(NEXUS 
+    ${NEXUS_SOURCES}
+)
 
-target_include_directories(nexus_firmware PRIVATE
+target_include_directories(NEXUS PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/_include
 )
 
-target_link_libraries(nexus_firmware PUBLIC
+target_link_libraries(NEXUS PRIVATE
     pico_stdlib
     hardware_gpio
     hardware_i2c
     hardware_spi
 )
+
+# 2. This line tells CMake to generate the .uf2 file for your executable
+pico_add_extra_outputs(NEXUS)

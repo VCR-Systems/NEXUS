@@ -1,4 +1,4 @@
-/Users/christophercyhui/Documents/GitHub/NEXUS/build/CMakeFiles/nexus_firmware.dir
+/Users/christophercyhui/Documents/GitHub/NEXUS/build/CMakeFiles/NEXUS.dir
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/CMakeFiles/edit_cache.dir
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/CMakeFiles/rebuild_cache.dir
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/pico-sdk/CMakeFiles/edit_cache.dir
