@@ -106,11 +106,10 @@ void calculate_bmp180_values(int32_t ut, int32_t up, float *temperature, float *
     x2 = (-7357 * p) >> 16;
     p = p + ((x1 + x2 + 3791) >> 4);
     
-    *pressure = (float)p; // Pressure in Pascals (Pa)
+    *pressure = (float)p; // pressure in Pascals (Pa)
 
-    // --- Altitude Calculation ---
-    // Standard sea-level pressure is 101325 Pa (1013.25 hPa)
-    // You can adjust 101325 to your local barometric pressure for higher accuracy
+    // standard sea-level pressure is 101325 Pa (1013.25 hPa)
+    // adjust 101325 to your local barometric pressure for higher accuracy
     *altitude = 44330.0f * (1.0f - powf(*pressure / 102066.0f, 0.1903f));
 }
 
@@ -139,9 +138,6 @@ int main() {
 
     int16_t accel[3], gyro[3];
     int32_t raw_temp, raw_press;
-
-    read_bmp180_calibration();
-    printf("AC1 calibration value: %d\n", ac1); // Check if this is non-zero
 
     while (true) {
         printf("\033[2J\033[H");
