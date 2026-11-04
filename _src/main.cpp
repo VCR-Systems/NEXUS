@@ -48,13 +48,9 @@ int main() {
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
         sleep_ms(50);
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
-        sleep_ms(950);
-
         read_mpu6050(accel, gyro);
-
         // Print live values per tick
         printf("Accel X: %d | Y: %d | Z: %d\n", accel[0], accel[1], accel[2]);
-
-        sleep_ms(250); // Sample four times a second
+        sleep_ms(200); 
     }
 }
