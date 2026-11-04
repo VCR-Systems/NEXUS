@@ -7,4 +7,4 @@
 #define IMU_SCL_PIN 5
 
 #define IMU_ADDRESS 0x68 // mpu6050
-#define BARO_ADDRESS 0x76 // bmp180
+#define BARO_ADDRESS 0x77 // bmp180
