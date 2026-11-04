@@ -24,6 +24,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
+# Enable USB output, disable UART output for printf
+pico_enable_stdio_usb(NEXUS 1)
+pico_enable_stdio_uart(NEXUS 0)
+
 file(GLOB NEXUS_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_LIST_DIR}/_src/*.cpp
 )
