@@ -128,18 +128,29 @@ void init_sd_card() {
     }
 }
 
-void write_sensor_log(int16_t ax, int16_t ay, int16_t az, float temp, float pressure, float altitude) {
+void write_sensor_log(int16_t accel[3], int16_t gyro[3], float temp, float pressure, float altitude) {
     FIL fil;
-    
-    // Include the "0:" prefix so FatFs knows which mounted work area to use
     FRESULT fr = f_open(&fil, "0:sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
     
     if (fr == FR_OK) {
         UINT bytes_written;
-        char buffer[128];
+        char buffer[192];
         
-        int length = snprintf(buffer, sizeof(buffer), "%d,%d,%d,%.2f,%.2f,%.2f\n", 
-                              ax, ay, az, temp, pressure, altitude);
+        // Convert accelerometer raw values to m/s^2 (±2g range scale factor: 16384.0)
+        float ax_ms2 = ((float)accel[0] / 16384.0f) * 9.80665f;
+        float ay_ms2 = ((float)accel[1] / 16384.0f) * 9.80665f;
+        float az_ms2 = ((float)accel[2] / 16384.0f) * 9.80665f;
+        
+        // Convert gyroscope raw values to degrees per second (±250°/s range scale factor: 131.0)
+        float gx_dps = (float)gyro[0] / 131.0f;
+        float gy_dps = (float)gyro[1] / 131.0f;
+        float gz_dps = (float)gyro[2] / 131.0f;
+        
+        int length = snprintf(buffer, sizeof(buffer), 
+                              "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n", 
+                              ax_ms2, ay_ms2, az_ms2, 
+                              gx_dps, gy_dps, gz_dps, 
+                              temp, pressure, altitude);
                               
         f_write(&fil, buffer, length, &bytes_written);
         f_close(&fil);
@@ -156,7 +167,7 @@ void init_csv_header() {
         // If the file is empty, write the header row
         if (f_size(&fil) == 0) {
             UINT bytes_written;
-            const char *header = "Accel_X,Accel_Y,Accel_Z,Temperature,Pressure,Altitude\n";
+            const char *header = "Accel_X,Accel_Y,Accel_Z,Temperature,Pressure,Altitude,Gyro_X,Gyro_Y,Gyro_Z\n";
             f_write(&fil, header, strlen(header), &bytes_written);
             printf("CSV header written successfully.\n");
         }
@@ -217,7 +228,7 @@ int main() {
         read_bmp180(&raw_temp, &raw_press);
         calculate_bmp180_values(raw_temp, raw_press, &temp_c, &pressure_pa, &altitude_m);
 
-        write_sensor_log(accel[0], accel[1], accel[2], temp_c, pressure_pa, altitude_m);
+        write_sensor_log(accel, gyro, temp_c, pressure_pa, altitude_m);
 
         printf("Accel X: %d | Y: %d | Z: %d | Temperature: %.2f | Pressure: %.2f | Altitude: %.2f\n", accel[0], accel[1], accel[2], temp_c, pressure_pa, altitude_m);
         printf("DEBUG: A1 Calibration Value: %d | ut Value: %d\n", ac1, raw_temp); // Debugging line to check calibration value
