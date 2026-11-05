@@ -150,6 +150,31 @@ void log_sensor_data(float accel_y, float temp, float pressure, float altitude) 
     }
 }
 
+void write_sensor_log(int16_t ax, int16_t ay, int16_t az, float temp, float pressure, float altitude) {
+    FIL fil;
+    
+    // Open file in append mode ("FA_OPEN_APPEND | FA_WRITE").
+    // If "sensor_log.csv" doesn't exist on the card, FatFs will automatically create it.
+    FRESULT fr = f_open(&fil, "sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
+    
+    if (fr == FR_OK) {
+        UINT bytes_written;
+        char buffer[128];
+        
+        // Format your data into a comma-separated string
+        int length = snprintf(buffer, sizeof(buffer), "%d,%d,%d,%.2f,%.2f,%.2f\n", 
+                              ax, ay, az, temp, pressure, altitude);
+                              
+        // Write the buffer to the microSD card
+        f_write(&fil, buffer, length, &bytes_written);
+        
+        // Close the file to flush the buffer and safely save data
+        f_close(&fil);
+    } else {
+        printf("DEBUG: Failed to open log file, error code: %d\n", fr);
+    }
+}
+
 int main() {
     stdio_init_all();
 
