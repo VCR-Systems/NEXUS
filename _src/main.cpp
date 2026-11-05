@@ -24,13 +24,13 @@ void read_mpu6050(int16_t accel[3], int16_t gyro[3]) {
     i2c_write_blocking(IMU_I2C_PORT, IMU_ADDRESS, &val, 1, true);
     i2c_read_blocking(IMU_I2C_PORT, IMU_ADDRESS, buffer, 14, false);
     
-    accel[0] = (buffer[0] << 8) | buffer[1];  // Accel X
-    accel[1] = (buffer[2] << 8) | buffer[3];  // Accel Y
-    accel[2] = (buffer[4] << 8) | buffer[5];  // Accel Z
+    accel[0] = (buffer[0] << 8) | buffer[1];  // x
+    accel[1] = (buffer[2] << 8) | buffer[3];  // y
+    accel[2] = (buffer[4] << 8) | buffer[5];  // z
 
-    gyro[0]  = (buffer[8] << 8) | buffer[9];  // Gyro X
-    gyro[1]  = (buffer[10] << 8) | buffer[11]; // Gyro Y
-    gyro[2]  = (buffer[12] << 8) | buffer[13]; // Gyro Z
+    gyro[0]  = (buffer[8] << 8) | buffer[9];  // x
+    gyro[1]  = (buffer[10] << 8) | buffer[11]; // y
+    gyro[2]  = (buffer[12] << 8) | buffer[13]; // z
 }
 
 void read_bmp180(int32_t *temperature, int32_t *pressure) {
@@ -158,7 +158,6 @@ void init_csv_header() {
     if (fr == FR_OK) {
         if (f_size(&fil) == 0) {
             UINT bytes_written;
-            // Updated header to match all 13 columns written by write_sensor_log
             const char *header = "Time_s,Accel_X_ms2,Accel_Y_ms2,Accel_Z_ms2,Gyro_X_dps,Gyro_Y_dps,Gyro_Z_dps,Angle_X_deg,Angle_Y_deg,Angle_Z_deg,Temperature,Pressure,Altitude\n";
             f_write(&fil, header, strlen(header), &bytes_written);
             printf("CSV header written successfully.\n");
@@ -214,26 +213,26 @@ int main() {
         sleep_ms(50);
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
 
-        // 1. Read sensors
+        // read sensor
         read_mpu6050(accel, gyro);
 
         float temp_c, pressure_pa, altitude_m;
         read_bmp180(&raw_temp, &raw_press);
         calculate_bmp180_values(raw_temp, raw_press, &temp_c, &pressure_pa, &altitude_m);
 
-        // 2. Calculate time and delta time (dt)
+        // calc time/dt
         uint32_t current_time_ms = to_ms_since_boot(get_absolute_time());
         float time_s = (float)current_time_ms / 1000.0f;
         
         float dt = (float)(current_time_ms - last_time_ms) / 1000.0f;
         last_time_ms = current_time_ms;
 
-        // 3. Integrate gyroscope rates (°/s) over time (dt) to get total angle degrees (°)
+        // gyro rate integration to get angles
         angles[0] += ((float)gyro[0] / 131.0f) * dt;
         angles[1] += ((float)gyro[1] / 131.0f) * dt;
         angles[2] += ((float)gyro[2] / 131.0f) * dt;
 
-        // 4. Log everything to the SD card
+        // log onto sd
         write_sensor_log(time_s, accel, gyro, angles, temp_c, pressure_pa, altitude_m);
         printf("Accel X: %d | Y: %d | Z: %d | Temperature: %.2f | Pressure: %.2f | Altitude: %.2f\n", accel[0], accel[1], accel[2], temp_c, pressure_pa, altitude_m);   
         sleep_ms(50); 
