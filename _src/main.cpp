@@ -127,48 +127,17 @@ void init_sd_card() {
     }
 }
 
-void log_sensor_data(float accel_y, float temp, float pressure, float altitude) {
-    // Open a log file in append mode ("a"). 
-    // If it doesn't exist, FatFs will create it.
-    FRESULT fr = f_open(&fil, "sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
-    
-    if (fr == FR_OK) {
-        UINT bw;
-        char buffer[128];
-        
-        // Format your data into a CSV string
-        int length = snprintf(buffer, sizeof(buffer), "%.2f,%.2f,%.2f,%.2f\n", 
-                              accel_y, temp, pressure, altitude);
-                              
-        // Write to the SD card file
-        f_write(&fil, buffer, length, &bw);
-        
-        // Close the file immediately to save data safely in case of power loss
-        f_close(&fil);
-    } else {
-        printf("Failed to open file for writing %d\n", fr);
-    }
-}
-
 void write_sensor_log(int16_t ax, int16_t ay, int16_t az, float temp, float pressure, float altitude) {
-    FIL fil;
-    
-    // Open file in append mode ("FA_OPEN_APPEND | FA_WRITE").
-    // If "sensor_log.csv" doesn't exist on the card, FatFs will automatically create it.
     FRESULT fr = f_open(&fil, "sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
     
     if (fr == FR_OK) {
         UINT bytes_written;
         char buffer[128];
         
-        // Format your data into a comma-separated string
         int length = snprintf(buffer, sizeof(buffer), "%d,%d,%d,%.2f,%.2f,%.2f\n", 
                               ax, ay, az, temp, pressure, altitude);
                               
-        // Write the buffer to the microSD card
         f_write(&fil, buffer, length, &bytes_written);
-        
-        // Close the file to flush the buffer and safely save data
         f_close(&fil);
     } else {
         printf("DEBUG: Failed to open log file, error code: %d\n", fr);
@@ -209,6 +178,7 @@ int main() {
 
     int16_t accel[3], gyro[3];
     int32_t raw_temp, raw_press;
+    float temperature, pressure, altitude;
 
     sleep_ms(500); // allow sensors to stabilize
 
@@ -222,6 +192,8 @@ int main() {
         float temp_c, pressure_pa, altitude_m;
         read_bmp180(&raw_temp, &raw_press);
         calculate_bmp180_values(raw_temp, raw_press, &temp_c, &pressure_pa, &altitude_m);
+
+        write_sensor_log(accel[0], accel[1], accel[2], temp_c, pressure_pa, altitude_m);
 
         printf("Accel X: %d | Y: %d | Z: %d | Temperature: %.2f | Pressure: %.2f | Altitude: %.2f\n", accel[0], accel[1], accel[2], temp_c, pressure_pa, altitude_m);
         printf("DEBUG: A1 Calibration Value: %d | ut Value: %d\n", ac1, raw_temp); // Debugging line to check calibration value
