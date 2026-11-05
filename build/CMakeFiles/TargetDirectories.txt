@@ -208,3 +208,5 @@
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/pico-sdk/src/rp2_common/pico_stdlib/CMakeFiles/rebuild_cache.dir
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/pico-sdk/docs/CMakeFiles/edit_cache.dir
 /Users/christophercyhui/Documents/GitHub/NEXUS/build/pico-sdk/docs/CMakeFiles/rebuild_cache.dir
+/Users/christophercyhui/Documents/GitHub/NEXUS/build/FatFs_SPI/CMakeFiles/edit_cache.dir
+/Users/christophercyhui/Documents/GitHub/NEXUS/build/FatFs_SPI/CMakeFiles/rebuild_cache.dir

@@ -24,17 +24,17 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-set(NO_OS_FATFS_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/no-OS-FatFS-SD-SPI-RPi-Pico)
-add_subdirectory(${NO_OS_FATFS_PATH} no-OS-FatFS)
+# --- Point directly to the FatFs_SPI subdirectory where CMakeLists.txt lives ---
+set(FATFS_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI)
+add_subdirectory(${FATFS_PATH} FatFs_SPI)
 
 file(GLOB NEXUS_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_LIST_DIR}/_src/*.cpp
 )
 
 add_executable(NEXUS 
-    main.cpp
-    hw_config.c
     ${NEXUS_SOURCES}
+    _src/hw_config.c
 )
 
 target_include_directories(NEXUS PRIVATE
@@ -46,12 +46,12 @@ target_link_libraries(NEXUS PRIVATE
     hardware_gpio
     hardware_i2c
     hardware_spi
-    ff_stdio
+    FatFs_SPI
 )
 
 # Enable USB output, disable UART output for printf
 pico_enable_stdio_usb(NEXUS 1)
 pico_enable_stdio_uart(NEXUS 0)
 
-# 2. This line tells CMake to generate the .uf2 file for your executable
+# Tells CMake to generate the .uf2 file for your executable
 pico_add_extra_outputs(NEXUS)

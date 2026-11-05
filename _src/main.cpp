@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
@@ -118,8 +119,8 @@ void calculate_bmp180_values(int32_t ut, int32_t up, float *temperature, float *
 }
 
 void init_sd_card() {
-    // Mount the filesystem (Logical drive 0)
-    FRESULT fr = f_mount(&fs, "", 1);
+    // Mount the filesystem explicitly to logical drive "0:"
+    FRESULT fr = f_mount(&fs, "0:", 1);
     if (fr != FR_OK) {
         printf("Error mounting SD card %d\n", fr);
     } else {
@@ -128,7 +129,10 @@ void init_sd_card() {
 }
 
 void write_sensor_log(int16_t ax, int16_t ay, int16_t az, float temp, float pressure, float altitude) {
-    FRESULT fr = f_open(&fil, "sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
+    FIL fil;
+    
+    // Include the "0:" prefix so FatFs knows which mounted work area to use
+    FRESULT fr = f_open(&fil, "0:sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
     
     if (fr == FR_OK) {
         UINT bytes_written;
@@ -141,6 +145,24 @@ void write_sensor_log(int16_t ax, int16_t ay, int16_t az, float temp, float pres
         f_close(&fil);
     } else {
         printf("DEBUG: Failed to open log file, error code: %d\n", fr);
+    }
+}
+
+void init_csv_header() {
+    FIL fil;
+    // Open or create the file
+    FRESULT fr = f_open(&fil, "0:sensor_log.csv", FA_OPEN_ALWAYS | FA_WRITE);
+    if (fr == FR_OK) {
+        // If the file is empty, write the header row
+        if (f_size(&fil) == 0) {
+            UINT bytes_written;
+            const char *header = "Accel_X,Accel_Y,Accel_Z,Temperature,Pressure,Altitude\n";
+            f_write(&fil, header, strlen(header), &bytes_written);
+            printf("CSV header written successfully.\n");
+        }
+        f_close(&fil);
+    } else {
+        printf("Failed to initialize CSV header, error: %d\n", fr);
     }
 }
 
@@ -174,6 +196,8 @@ int main() {
     uint8_t wake_cmd[] = {0x6B, 0x00}; 
     i2c_write_blocking(IMU_I2C_PORT, IMU_ADDRESS, wake_cmd, 2, false);
 
+    init_sd_card();
+    init_csv_header();
     read_bmp180_calibration();
 
     int16_t accel[3], gyro[3];
