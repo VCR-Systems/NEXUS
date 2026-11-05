@@ -172,7 +172,6 @@ int main() {
     gpio_set_function(SD_MOSI_PIN, GPIO_FUNC_SPI);
     gpio_set_function(SD_MISO_PIN, GPIO_FUNC_SPI);
     spi_init(SD_SPI_PORT, 1000 * 1000); // 1 MHz for initialization
-
     gpio_init(SD_CS_PIN);
     gpio_set_dir(SD_CS_PIN, GPIO_OUT);
     gpio_put(SD_CS_PIN, 1); // desel the sd card

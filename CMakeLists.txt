@@ -24,12 +24,16 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
+set(NO_OS_FATFS_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/no-OS-FatFS-SD-SPI-RPi-Pico)
+add_subdirectory(${NO_OS_FATFS_PATH} no-OS-FatFS)
+
 file(GLOB NEXUS_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_LIST_DIR}/_src/*.cpp
 )
 
-# 1. Change add_library to add_executable using your project name 'NEXUS'
 add_executable(NEXUS 
+    main.cpp
+    hw_config.c
     ${NEXUS_SOURCES}
 )
 
@@ -42,6 +46,7 @@ target_link_libraries(NEXUS PRIVATE
     hardware_gpio
     hardware_i2c
     hardware_spi
+    ff_stdio
 )
 
 # Enable USB output, disable UART output for printf
