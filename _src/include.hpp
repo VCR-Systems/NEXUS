@@ -8,3 +8,9 @@
 
 #define IMU_ADDRESS 0x68 // mpu6050
 #define BARO_ADDRESS 0x77 // bmp180
+
+#define SD_SCK_PIN 10
+#define SD_MOSI_PIN 11
+#define SD_MISO_PIN 12
+#define SD_CS_PIN 13
+#define SD_SPI_PORT spi1

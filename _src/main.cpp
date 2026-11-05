@@ -3,10 +3,15 @@
 #include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
+#include "hardware/spi.h"
 #include "include.hpp"
+#include "ff.h"
 
 int imu_data;
 int baro_data;
+
+FATFS fs;
+FIL fil;
 
 int16_t ac1, ac2, ac3;
 uint16_t ac4, ac5, ac6;
@@ -32,20 +37,19 @@ void read_mpu6050(int16_t accel[3], int16_t gyro[3]) {
 void read_bmp180(int32_t *temperature, int32_t *pressure) {
     uint8_t buffer[3];
     
-    // --- 1. Read Temperature ---
+    // read temp
     uint8_t temp_cmd[2] = {0xF4, 0x2E}; // Register 0xF4, Command 0x2E
     i2c_write_blocking(BARO_I2C_PORT, BARO_ADDRESS, temp_cmd, 2, false);
-    sleep_ms(5); // Wait for conversion
+    sleep_ms(15); // Wait for conversion
 
     uint8_t reg_addr = 0xF6; // Data register
     i2c_write_blocking(BARO_I2C_PORT, BARO_ADDRESS, &reg_addr, 1, true);
     i2c_read_blocking(BARO_I2C_PORT, BARO_ADDRESS, buffer, 2, false);
     *temperature = (buffer[0] << 8) | buffer[1];
-
-    // --- 2. Read Pressure ---
+    // read pressure
     uint8_t press_cmd[2] = {0xF4, 0x34}; // Register 0xF4, Command 0x34 (OSS = 0)
     i2c_write_blocking(BARO_I2C_PORT, BARO_ADDRESS, press_cmd, 2, false);
-    sleep_ms(5); // Wait for conversion
+    sleep_ms(15); // Wait for conversion
 
     reg_addr = 0xF6; // Data register
     i2c_write_blocking(BARO_I2C_PORT, BARO_ADDRESS, &reg_addr, 1, true);
@@ -75,13 +79,13 @@ void read_bmp180_calibration() {
 }
 
 void calculate_bmp180_values(int32_t ut, int32_t up, float *temperature, float *pressure, float *altitude) {
-    // --- Temperature Calculation ---
+    // temp calc
     int32_t x1 = ((ut - (int32_t)ac6) * (int32_t)ac5) >> 15;
     int32_t x2 = ((int32_t)mc << 11) / (x1 + (int32_t)md);
     int32_t b5 = x1 + x2;
     *temperature = ((b5 + 8) >> 4) / 10.0f; // Temperature in deg C
 
-    // --- Pressure Calculation ---
+    // pressure calc
     int32_t b6 = b5 - 4000;
     x1 = (b2 * (b6 * b6 >> 12)) >> 11;
     x2 = (ac2 * b6) >> 11;
@@ -113,6 +117,39 @@ void calculate_bmp180_values(int32_t ut, int32_t up, float *temperature, float *
     *altitude = 44330.0f * (1.0f - powf(*pressure / 102066.0f, 0.1903f));
 }
 
+void init_sd_card() {
+    // Mount the filesystem (Logical drive 0)
+    FRESULT fr = f_mount(&fs, "", 1);
+    if (fr != FR_OK) {
+        printf("Error mounting SD card %d\n", fr);
+    } else {
+        printf("SD Card mounted successfully\n");
+    }
+}
+
+void log_sensor_data(float accel_y, float temp, float pressure, float altitude) {
+    // Open a log file in append mode ("a"). 
+    // If it doesn't exist, FatFs will create it.
+    FRESULT fr = f_open(&fil, "sensor_log.csv", FA_OPEN_APPEND | FA_WRITE);
+    
+    if (fr == FR_OK) {
+        UINT bw;
+        char buffer[128];
+        
+        // Format your data into a CSV string
+        int length = snprintf(buffer, sizeof(buffer), "%.2f,%.2f,%.2f,%.2f\n", 
+                              accel_y, temp, pressure, altitude);
+                              
+        // Write to the SD card file
+        f_write(&fil, buffer, length, &bw);
+        
+        // Close the file immediately to save data safely in case of power loss
+        f_close(&fil);
+    } else {
+        printf("Failed to open file for writing %d\n", fr);
+    }
+}
+
 int main() {
     stdio_init_all();
 
@@ -130,6 +167,16 @@ int main() {
     gpio_pull_up(BARO_SDA_PIN);
     gpio_pull_up(BARO_SCL_PIN);
     i2c_init(BARO_I2C_PORT, 400 * 1000);
+
+    gpio_set_function(SD_SCK_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(SD_MOSI_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(SD_MISO_PIN, GPIO_FUNC_SPI);
+    spi_init(SD_SPI_PORT, 1000 * 1000); // 1 MHz for initialization
+
+    gpio_init(SD_CS_PIN);
+    gpio_set_dir(SD_CS_PIN, GPIO_OUT);
+    gpio_put(SD_CS_PIN, 1); // desel the sd card
+
     
     uint8_t wake_cmd[] = {0x6B, 0x00}; 
     i2c_write_blocking(IMU_I2C_PORT, IMU_ADDRESS, wake_cmd, 2, false);
@@ -138,6 +185,8 @@ int main() {
 
     int16_t accel[3], gyro[3];
     int32_t raw_temp, raw_press;
+
+    sleep_ms(500); // allow sensors to stabilize
 
     while (true) {
         printf("\033[2J\033[H");
