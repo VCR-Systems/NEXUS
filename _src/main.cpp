@@ -6,6 +6,7 @@
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
 #include "include.hpp"
+#include "config.hpp"
 #include "ff.h"
 
 int imu_data;
@@ -109,7 +110,7 @@ void calculate_bmp180_values(int32_t ut, int32_t up, float *temperature, float *
     p = p + ((x1 + x2 + 3791) >> 4);
     
     *pressure = (float)p;
-    *altitude = 44330.0f * (1.0f - powf(*pressure / 102066.0f, 0.1903f));
+    *altitude = 44330.0f * (1.0f - powf(*pressure / QNH, 0.1903f));
 }
 
 void init_sd_card() {
